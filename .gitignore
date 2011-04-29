@@ -40,3 +40,5 @@ pkg
 #
 # For vim:
 #*.swp
+#
+config/s3.yml

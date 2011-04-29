@@ -1,0 +1,86 @@
+require 'rubygems'
+require 'bundler'
+require 'digest/sha1'
+
+Bundler.require
+
+module Juggler
+
+  def self.config
+    YAML.load_file(File.dirname(__FILE__) + '/../config/s3.yml')['development']
+  end
+
+  def self.queue_bucket
+    AWS::S3::Bucket.find(self.config['queue_bucket_name'])
+  end
+
+  def self.processed_bucket
+    AWS::S3::Bucket.find(self.config['processed_bucket_name'])
+  end
+
+  def self.queue
+    queue_bucket.objects.reject {|o| o.path.include?("---LOCKED---")}
+  end
+
+  class Worker
+
+    def self.run
+      new.run
+    end
+
+    def initialize
+    end
+
+    def run
+      Juggler.queue.each do |object|
+        Juggler::Job.run(object)
+      end
+    end
+
+  end
+
+  class Job
+    def self.run(object)
+      object = lock(object)
+      if (result = perform(StringIO.new(object.value)))
+        cleanup object
+        AWS::S3::S3Object.store(sha1(result), result, Juggler.config['processed_bucket_name'])
+      end
+    end
+
+    def self.sha1(io)
+      sha1 = Digest::SHA1.new
+			counter = 0
+			while (!io.eof)
+				buffer = io.readpartial($BUFLEN)
+				sha1.update(buffer)
+			end
+      return sha1.hexdigest
+    end
+
+    def self.lock(object)
+      parts = File.split(object.path)
+      name = "---LOCKED---#{parts.last}"
+      object.rename(name)
+      Juggler.queue_bucket[name]
+    end
+
+    def self.perform(io)
+      io
+    end
+
+    def self.cleanup(object)
+      object.delete
+    end
+
+    def initialize(object)
+    end
+  end
+
+end
+
+AWS::S3::Base.establish_connection!(
+  :access_key_id     => Juggler.config['access_key_id'],
+  :secret_access_key => Juggler.config['secret_access_key']
+)
+

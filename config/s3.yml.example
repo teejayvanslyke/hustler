@@ -1,0 +1,6 @@
+development:
+  access_key_id: KEY
+  secret_access_key: SECRET
+  queue_bucket_name: bucket_name
+  processed_bucket_name: bucket_name
+
