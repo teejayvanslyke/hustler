@@ -51,6 +51,7 @@ describe Juggler do
     before :each do
       @s3_object = mock_s3_object(:path => "/the_bucket/filename")
       Juggler.queue_bucket.stub!(:[]).and_return(@s3_object)
+
       class TestProcessor
         def run(io)
           return StringIO.new("FOOBAR")
@@ -81,6 +82,29 @@ describe Juggler do
         with(Digest::SHA1.hexdigest("FOOBAR"), anything, Juggler.config['processed_bucket_name'])
       Juggler::Job.run(@s3_object)
     end
+
+    context "when using a processor with multiple output streams" do
+      before :each do 
+        class MultipleOutputProcessor
+          def run(io)
+            return [ StringIO.new("FOO"), StringIO.new("BAR") ]
+          end
+        end
+
+        Juggler.processor = MultipleOutputProcessor.new
+      end
+
+      it "should store each as a separate object" do
+        %w(FOO BAR).each do |data|
+          AWS::S3::S3Object.should_receive(:store).
+            with(Digest::SHA1.hexdigest(data), anything, Juggler.config['processed_bucket_name'])
+        end
+
+        Juggler::Job.run(@s3_object)
+      end
+    end
+
   end
+
 end
 

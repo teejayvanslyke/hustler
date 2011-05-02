@@ -52,7 +52,10 @@ module Juggler
       object = lock(object)
       if (result = perform(StringIO.new(object.value)))
         cleanup object
-        AWS::S3::S3Object.store(sha1(result), result, Juggler.config['processed_bucket_name'])
+        to_write = result.is_a?(Array) ? result : [ result ]
+        to_write.each do |io|
+          AWS::S3::S3Object.store(sha1(io), io, Juggler.config['processed_bucket_name'])
+        end
       end
     end
 
