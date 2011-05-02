@@ -22,6 +22,14 @@ module Juggler
     queue_bucket.objects.reject {|o| o.path.include?("---LOCKED---")}
   end
 
+  def self.processor=(processor)
+    @processor = processor
+  end
+  
+  def self.processor
+    @processor
+  end
+
   class Worker
 
     def self.run
@@ -66,7 +74,7 @@ module Juggler
     end
 
     def self.perform(io)
-      io
+      Juggler.processor.run(io)
     end
 
     def self.cleanup(object)
@@ -77,7 +85,15 @@ module Juggler
     end
   end
 
+  class PassthroughProcessor
+    def run(io)
+      io
+    end
+  end
+
 end
+
+Juggler.processor = Juggler::PassthroughProcessor.new # by default
 
 AWS::S3::Base.establish_connection!(
   :access_key_id     => Juggler.config['access_key_id'],
