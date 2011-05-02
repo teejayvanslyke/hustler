@@ -8,6 +8,7 @@ gem "aws-s3", :require => 'aws/s3', :git => 'git://github.com/37signals/aws-s3.g
 gem 'builder'
 gem 'mime-types'
 gem 'xml-simple'
+gem 'thor'
 
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.

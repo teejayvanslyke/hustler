@@ -1,8 +1,12 @@
+$:.unshift File.join(File.dirname(__FILE__),'..','lib')
+
 require 'rubygems'
 require 'bundler'
 require 'digest/sha1'
 
 Bundler.require
+
+require 'juggler/cli'
 
 module Juggler
 
