@@ -75,7 +75,7 @@ module Juggler
       sha1 = Digest::SHA1.new
 			counter = 0
 			while (!io.eof)
-				buffer = io.readpartial($BUFLEN)
+				buffer = io.readpartial(4096)
 				sha1.update(buffer)
 			end
       return sha1.hexdigest
