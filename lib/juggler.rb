@@ -11,11 +11,15 @@ require 'juggler/cli'
 module Juggler
 
   def self.config
-    @config || YAML.load_file(File.dirname(__FILE__) + '/../config/s3.yml')['development']
+    @config 
   end
 
   def self.configure(options)
     @config = options
+    AWS::S3::Base.establish_connection!(
+      :access_key_id     => @config['access_key_id'],
+      :secret_access_key => @config['secret_access_key']
+    )
   end
 
   def self.queue_bucket
@@ -105,9 +109,4 @@ module Juggler
 end
 
 Juggler.processor = Juggler::PassthroughProcessor.new # by default
-
-AWS::S3::Base.establish_connection!(
-  :access_key_id     => Juggler.config['access_key_id'],
-  :secret_access_key => Juggler.config['secret_access_key']
-)
 
