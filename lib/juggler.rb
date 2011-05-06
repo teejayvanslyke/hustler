@@ -14,7 +14,7 @@ module Juggler
     @config || YAML.load_file(File.dirname(__FILE__) + '/../config/s3.yml')['development']
   end
 
-  def configure(options)
+  def self.configure(options)
     @config = options
   end
 
