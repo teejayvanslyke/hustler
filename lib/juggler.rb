@@ -11,7 +11,11 @@ require 'juggler/cli'
 module Juggler
 
   def self.config
-    YAML.load_file(File.dirname(__FILE__) + '/../config/s3.yml')['development']
+    @config || YAML.load_file(File.dirname(__FILE__) + '/../config/s3.yml')['development']
+  end
+
+  def configure(options)
+    @config = options
   end
 
   def self.queue_bucket
