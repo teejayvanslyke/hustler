@@ -2,6 +2,15 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe Juggler do
 
+  before :all do
+    Juggler.configure(
+      'access_key_id'         => '0XZN91V3MBE44A05R2R2',
+      'secret_access_key'     => 'WKVJffwxdw+JNzuRTYfj0SmCMgemiFGnIc+KEYRB',
+      'queue_bucket_name'     => "queue.juggler.development",
+      'processed_bucket_name' => "processed.juggler.development"
+    )
+  end
+
   def mock_s3_object(overrides={})
     mock(AWS::S3::S3Object, {
       :path => '/path/to/file', :rename => nil, :delete => nil, :value => 'val'
@@ -81,6 +90,28 @@ describe Juggler do
       AWS::S3::S3Object.should_receive(:store).
         with(Digest::SHA1.hexdigest("FOOBAR"), anything, Juggler.config['processed_bucket_name'])
       Juggler::Job.run(@s3_object)
+    end
+
+    it "should have an initial status of 'queued'" do
+      job = Juggler::Job.new(@s3_object)
+      job.status.should == 'queued'
+    end
+
+    it "should mark the job as 'completed' when completed successfully" do
+      job = Juggler::Job.run(@s3_object)
+      job.status.should == 'completed'
+    end
+
+    context "when the job fails" do
+      before :each do
+        @job = Juggler::Job.new(@s3_object)
+        @job.stub!(:perform).and_return(false)
+      end
+
+      it "should mark the job as 'failed'" do
+        @job.run
+        @job.status.should == 'failed'
+      end
     end
 
     context "when using a processor with multiple output streams" do

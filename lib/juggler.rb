@@ -10,12 +10,22 @@ require 'juggler/cli'
 
 module Juggler
 
+  def self.redis
+    @redis ||= Redis.new(:host => @config['redis_host'], :port => @config['redis_port'])
+  end
+
   def self.config
     @config 
   end
 
+  DEFAULT_OPTIONS =
+    {
+      'redis_host' => 'localhost',
+      'redis_port' => 6379
+    }.freeze
+
   def self.configure(options)
-    @config = options
+    @config = DEFAULT_OPTIONS.merge(options)
     AWS::S3::Base.establish_connection!(
       :access_key_id     => @config['access_key_id'],
       :secret_access_key => @config['secret_access_key']
@@ -61,17 +71,42 @@ module Juggler
 
   class Job
     def self.run(object)
-      object = lock(object)
-      if (result = perform(StringIO.new(object.value)))
-        cleanup object
+      job = new(object)
+      job.run
+      job
+    end
+
+    def initialize(object)
+      @object = lock(object)
+      self.status = 'queued'
+    end
+
+    def run
+      if (result = perform(StringIO.new(@object.value)))
+        cleanup @object
         to_write = result.is_a?(Array) ? result : [ result ]
         to_write.each do |io|
           AWS::S3::S3Object.store(sha1(io), io, Juggler.config['processed_bucket_name'])
         end
+        self.status = 'completed'
+      else
+        self.status = 'failed'
       end
     end
 
-    def self.sha1(io)
+    def id 
+      Digest::SHA1.hexdigest(@object.value).to_s
+    end
+
+    def status=(value)
+      Juggler.redis.hset 'juggler.status', self.id, value
+    end
+
+    def status
+      Juggler.redis.hget 'juggler.status', self.id
+    end
+
+    def sha1(io)
       sha1 = Digest::SHA1.new
 			counter = 0
 			while (!io.eof)
@@ -81,22 +116,19 @@ module Juggler
       return sha1.hexdigest
     end
 
-    def self.lock(object)
+    def lock(object)
       parts = File.split(object.path)
       name = "---LOCKED---#{parts.last}"
       object.rename(name)
       Juggler.queue_bucket[name]
     end
 
-    def self.perform(io)
+    def perform(io)
       Juggler.processor.run(io)
     end
 
-    def self.cleanup(object)
+    def cleanup(object)
       object.delete
-    end
-
-    def initialize(object)
     end
   end
 
