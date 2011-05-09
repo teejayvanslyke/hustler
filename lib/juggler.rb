@@ -3,6 +3,7 @@ $:.unshift File.join(File.dirname(__FILE__),'..','lib')
 require 'rubygems'
 require 'bundler'
 require 'digest/sha1'
+require 'json'
 
 Bundler.require
 
@@ -114,6 +115,15 @@ module Juggler
       (Juggler.redis.hget 'juggler.progress', self.id).to_f
     end
 
+    def set_data(key, value)
+      Juggler.redis.hset 'juggler.data', self.id, JSON.dump(data.merge(key => value))
+    end
+
+    def data
+      str = Juggler.redis.hget 'juggler.data', self.id
+      str ? JSON.parse(str) : {}
+    end
+
     def sha1(io)
       sha1 = Digest::SHA1.new
 			counter = 0
@@ -149,6 +159,14 @@ module Juggler
 
     def progress(value)
       job.progress = value
+    end
+
+    def set(key, value)
+      job.set_data key, value
+    end
+
+    def get(key)
+      job.data[key]
     end
   end
 

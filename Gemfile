@@ -9,6 +9,7 @@ gem 'builder'
 gem 'mime-types'
 gem 'xml-simple'
 gem 'thor'
+gem 'json'
 
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.

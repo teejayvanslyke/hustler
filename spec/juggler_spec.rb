@@ -64,11 +64,17 @@ describe Juggler do
       class TestProcessor < Juggler::Processor
         def run(io)
           progress 0.5
+          set 'test123', { 'key' => 'value' }
           return StringIO.new("FOOBAR")
         end
       end
 
       Juggler.processor = TestProcessor
+    end
+
+    it "should have set the data object according to the #put call in the processor" do
+      job = Juggler::Job.run(@s3_object)
+      job.data['test123'].should == { 'key' => 'value' }
     end
 
     it "should reflect the appropriate progress status" do
