@@ -81,8 +81,17 @@ module Juggler
       job
     end
 
-    def initialize(object)
-      @object = lock(object)
+    def self.find(id)
+      new(id)
+    end
+
+    def initialize(id_or_object)
+      if id_or_object.is_a?(String)
+        @id = id_or_object
+      else
+        @object = lock(id_or_object)
+      end
+
       self.status = 'queued'
     end
 
@@ -100,7 +109,11 @@ module Juggler
     end
 
     def id 
-      Digest::SHA1.hexdigest(@object.value).to_s
+      if @id
+        return @id
+      else
+        Digest::SHA1.hexdigest(@object.value).to_s
+      end
     end
 
     def status=(value)

@@ -146,6 +146,23 @@ describe Juggler do
       end
     end
 
+    context "when retrieving an existing job" do
+      before :each do 
+        @job = Juggler::Job.new(@s3_object)
+        @job.run
+      end
+
+      it "should return the job instance" do
+        job = Juggler::Job.find(@job.id)
+        job.should be_a(Juggler::Job)
+      end
+
+      it "should retain its status" do
+        job = Juggler::Job.find(@job.id)
+        job.status.should == 'queued'
+      end
+    end
+
   end
 
 end
