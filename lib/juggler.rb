@@ -103,8 +103,10 @@ module Juggler
           AWS::S3::S3Object.store(sha1(io), io, Juggler.config['processed_bucket_name'])
         end
         self.status = 'completed'
+        processor.on_complete(self)
       else
         self.status = 'failed'
+        processor.on_error(self)
       end
     end
 
@@ -158,8 +160,12 @@ module Juggler
       Juggler.queue_bucket[name]
     end
 
+    def processor
+      @processor ||= Juggler.processor.new(self)
+    end
+
     def perform(io)
-      Juggler.processor.new(self).run(io)
+      processor.run(io)
     end
 
     def cleanup(object)
@@ -184,6 +190,14 @@ module Juggler
 
     def get(key)
       job.data[key]
+    end
+    
+    def on_complete(job)
+      # default noop
+    end
+
+    def on_error(job)
+      # default noop
     end
   end
 

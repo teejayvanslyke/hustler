@@ -61,11 +61,22 @@ describe Juggler do
       @s3_object = mock_s3_object(:path => "/the_bucket/filename")
       Juggler.queue_bucket.stub!(:[]).and_return(@s3_object)
 
+      $dummy = nil
+
       class TestProcessor < Juggler::Processor
+
         def run(io)
           progress 0.5
           set 'test123', { 'key' => 'value' }
           return StringIO.new("FOOBAR")
+        end
+
+        def on_complete(job)
+          $dummy = "completed"
+        end
+
+        def on_error(job)
+          $dummy = "failed"
         end
       end
 
@@ -113,6 +124,11 @@ describe Juggler do
       job.status.should == 'completed'
     end
 
+    it "should run the complete callback when completed successfully" do
+      job = Juggler::Job.run(@s3_object)
+      $dummy.should == 'completed'
+    end
+
     context "when the job fails" do
       before :each do
         @job = Juggler::Job.new(@s3_object)
@@ -123,11 +139,16 @@ describe Juggler do
         @job.run
         @job.status.should == 'failed'
       end
+
+      it "should run the failure callback" do
+        @job.run
+        $dummy.should == 'failed'
+      end
     end
 
     context "when using a processor with multiple output streams" do
       before :each do 
-        class MultipleOutputProcessor
+        class MultipleOutputProcessor < Juggler::Processor
           def run(io)
             return [ StringIO.new("FOO"), StringIO.new("BAR") ]
           end
