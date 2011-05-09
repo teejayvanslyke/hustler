@@ -106,6 +106,14 @@ module Juggler
       Juggler.redis.hget 'juggler.status', self.id
     end
 
+    def progress=(value)
+      Juggler.redis.hset 'juggler.progress', self.id, value
+    end
+
+    def progress
+      (Juggler.redis.hget 'juggler.progress', self.id).to_f
+    end
+
     def sha1(io)
       sha1 = Digest::SHA1.new
 			counter = 0
@@ -124,7 +132,7 @@ module Juggler
     end
 
     def perform(io)
-      Juggler.processor.run(io)
+      Juggler.processor.new(self).run(io)
     end
 
     def cleanup(object)
@@ -132,7 +140,19 @@ module Juggler
     end
   end
 
-  class PassthroughProcessor
+  class Processor
+    def initialize(job)
+      @job = job
+    end
+
+    attr_reader :job
+
+    def progress(value)
+      job.progress = value
+    end
+  end
+
+  class PassthroughProcessor < Processor
     def run(io)
       io
     end
@@ -140,5 +160,5 @@ module Juggler
 
 end
 
-Juggler.processor = Juggler::PassthroughProcessor.new # by default
+Juggler.processor = Juggler::PassthroughProcessor
 

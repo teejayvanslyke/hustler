@@ -61,15 +61,20 @@ describe Juggler do
       @s3_object = mock_s3_object(:path => "/the_bucket/filename")
       Juggler.queue_bucket.stub!(:[]).and_return(@s3_object)
 
-      class TestProcessor
+      class TestProcessor < Juggler::Processor
         def run(io)
+          progress 0.5
           return StringIO.new("FOOBAR")
         end
       end
 
-      Juggler.processor = TestProcessor.new
+      Juggler.processor = TestProcessor
     end
 
+    it "should reflect the appropriate progress status" do
+      job = Juggler::Job.run(@s3_object)
+      job.progress.should == 0.5
+    end
 
     context "and the file already has the lock prefix" do
       before :each do
@@ -122,7 +127,7 @@ describe Juggler do
           end
         end
 
-        Juggler.processor = MultipleOutputProcessor.new
+        Juggler.processor = MultipleOutputProcessor
       end
 
       it "should store each as a separate object" do
