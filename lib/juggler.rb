@@ -11,50 +11,68 @@ require 'juggler/cli'
 
 module Juggler
 
-  def self.redis
-    @redis ||= Redis.new(:host => @config['redis_host'], :port => @config['redis_port'])
-  end
-
-  def self.config
-    @config 
-  end
-
   DEFAULT_OPTIONS =
     {
       'redis_host' => 'localhost',
       'redis_port' => 6379
     }.freeze
 
-  def self.configure(options)
-    @config = DEFAULT_OPTIONS.merge(options)
-    AWS::S3::Base.establish_connection!(
-      :access_key_id     => @config['access_key_id'],
-      :secret_access_key => @config['secret_access_key']
-    )
-  end
 
-  def self.queue_bucket
-    AWS::S3::Bucket.find(self.config['queue_bucket_name'])
-  end
+  class << self
 
-  def self.processed_bucket
-    AWS::S3::Bucket.find(self.config['processed_bucket_name'])
-  end
+    def redis
+      @redis ||= Redis.new(:host => @config['redis_host'], :port => @config['redis_port'])
+    end
 
-  def self.processed_url(id)
-    "http://#{self.config['processed_bucket_name']}.s3.amazonaws.com/#{id}"
-  end
+    def config
+      @config 
+    end
 
-  def self.queue
-    queue_bucket.objects.reject {|o| o.path.include?("---LOCKED---")}
-  end
+    def configure(options)
+      @config = DEFAULT_OPTIONS.merge(options)
+      AWS::S3::Base.establish_connection!(
+        :access_key_id     => @config['access_key_id'],
+        :secret_access_key => @config['secret_access_key']
+      )
+    end
 
-  def self.processor=(processor)
-    @processor = processor
-  end
-  
-  def self.processor
-    @processor
+    def sha1(io)
+      sha1 = Digest::SHA1.new
+      counter = 0
+      while (!io.eof)
+        buffer = io.readpartial(4096)
+        sha1.update(buffer)
+      end
+      return sha1.hexdigest
+    end
+
+    def queue_bucket
+      AWS::S3::Bucket.find(self.config['queue_bucket_name'])
+    end
+
+    def processed_bucket
+      AWS::S3::Bucket.find(self.config['processed_bucket_name'])
+    end
+
+    def processed_url(id)
+      "http://#{self.config['processed_bucket_name']}.s3.amazonaws.com/#{id}"
+    end
+
+    def queue
+      queue_bucket.objects.reject {|o| o.path.include?("---LOCKED---")}
+    end
+
+    def enqueue(file)
+      AWS::S3::S3Object.store(sha1(file), file, self.config['queue_bucket_name'])
+    end
+
+    def processor=(processor)
+      @processor = processor
+    end
+    
+    def processor
+      @processor
+    end
   end
 
   class Worker
@@ -144,13 +162,7 @@ module Juggler
     end
 
     def sha1(io)
-      sha1 = Digest::SHA1.new
-			counter = 0
-			while (!io.eof)
-				buffer = io.readpartial(4096)
-				sha1.update(buffer)
-			end
-      return sha1.hexdigest
+      Juggler.sha1(io)
     end
 
     def lock(object)

@@ -28,6 +28,14 @@ describe Juggler do
     Juggler.queue_bucket.stub!(:[]).and_return(@s3_object)
   end
 
+  describe "when enqueuing a file for processing" do
+    it "should upload the file to S3" do
+      file = File.open(File.dirname(__FILE__) + '/fixtures/example.jpg')
+      AWS::S3::S3Object.should_receive(:store).with(anything, file, Juggler.config['queue_bucket_name'])
+      Juggler.enqueue file
+    end
+  end
+
   describe Juggler::Worker do
 
     it "should poll for whether there is a file in the queue" do
