@@ -41,6 +41,10 @@ module Juggler
     AWS::S3::Bucket.find(self.config['processed_bucket_name'])
   end
 
+  def self.processed_url(id)
+    "http://#{self.config['processed_bucket_name']}.s3.amazonaws.com/#{id}"
+  end
+
   def self.queue
     queue_bucket.objects.reject {|o| o.path.include?("---LOCKED---")}
   end
