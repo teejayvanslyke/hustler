@@ -2,6 +2,6 @@
 $:.unshift File.join(File.dirname(__FILE__),'..','lib')
 
 require 'rubygems'
-require 'juggler'
+require 'hustler'
 
 Juggler::CLI.start

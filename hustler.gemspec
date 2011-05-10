@@ -4,18 +4,17 @@
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |s|
-  s.name = %q{juggler}
-  s.version = "0.0.0"
+  s.name = %q{hustler}
+  s.version = "0.1.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["T.J. VanSlyke"]
-  s.date = %q{2011-05-06}
+  s.date = %q{2011-05-10}
   s.default_executable = %q{juggler}
-  s.description = %q{TODO: longer description of your gem}
+  s.description = %q{Redis + S3 file queue}
   s.email = %q{teejay.vanslyke@gmail.com}
   s.executables = ["juggler"]
   s.extra_rdoc_files = [
-    "LICENSE.txt",
     "README.rdoc"
   ]
   s.files = [
@@ -23,25 +22,27 @@ Gem::Specification.new do |s|
     ".rspec",
     "Gemfile",
     "Gemfile.lock",
-    "LICENSE.txt",
     "README.rdoc",
     "Rakefile",
     "VERSION",
     "bin/juggler",
     "config/s3.yml.example",
-    "lib/juggler.rb",
-    "lib/juggler/cli.rb",
+    "lib/hustler.rb",
+    "lib/hustler/cli.rb",
+    "spec/fixtures/example.jpg",
     "spec/juggler_spec.rb",
-    "spec/spec_helper.rb"
+    "spec/spec_helper.rb",
+    "spec/support/redis.rb"
   ]
-  s.homepage = %q{http://github.com/teejayvanslyke/juggler}
+  s.homepage = %q{http://github.com/teejayvanslyke/hustler}
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.3.7}
-  s.summary = %q{TODO: one-line summary of your gem}
+  s.summary = %q{Redis + S3 file queue}
   s.test_files = [
     "spec/juggler_spec.rb",
-    "spec/spec_helper.rb"
+    "spec/spec_helper.rb",
+    "spec/support/redis.rb"
   ]
 
   if s.respond_to? :specification_version then
@@ -55,10 +56,12 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<mime-types>, [">= 0"])
       s.add_runtime_dependency(%q<xml-simple>, [">= 0"])
       s.add_runtime_dependency(%q<thor>, [">= 0"])
+      s.add_runtime_dependency(%q<json>, [">= 0"])
       s.add_development_dependency(%q<rspec>, ["~> 2.1.0"])
       s.add_development_dependency(%q<bundler>, ["~> 1.0.0"])
       s.add_development_dependency(%q<jeweler>, ["~> 1.5.1"])
       s.add_development_dependency(%q<rcov>, [">= 0"])
+      s.add_runtime_dependency(%q<redis>, [">= 0"])
     else
       s.add_dependency(%q<redis>, [">= 0"])
       s.add_dependency(%q<aws-s3>, [">= 0"])
@@ -66,10 +69,12 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<mime-types>, [">= 0"])
       s.add_dependency(%q<xml-simple>, [">= 0"])
       s.add_dependency(%q<thor>, [">= 0"])
+      s.add_dependency(%q<json>, [">= 0"])
       s.add_dependency(%q<rspec>, ["~> 2.1.0"])
       s.add_dependency(%q<bundler>, ["~> 1.0.0"])
       s.add_dependency(%q<jeweler>, ["~> 1.5.1"])
       s.add_dependency(%q<rcov>, [">= 0"])
+      s.add_dependency(%q<redis>, [">= 0"])
     end
   else
     s.add_dependency(%q<redis>, [">= 0"])
@@ -78,10 +83,12 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<mime-types>, [">= 0"])
     s.add_dependency(%q<xml-simple>, [">= 0"])
     s.add_dependency(%q<thor>, [">= 0"])
+    s.add_dependency(%q<json>, [">= 0"])
     s.add_dependency(%q<rspec>, ["~> 2.1.0"])
     s.add_dependency(%q<bundler>, ["~> 1.0.0"])
     s.add_dependency(%q<jeweler>, ["~> 1.5.1"])
     s.add_dependency(%q<rcov>, [">= 0"])
+    s.add_dependency(%q<redis>, [">= 0"])
   end
 end
 

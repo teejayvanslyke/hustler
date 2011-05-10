@@ -7,7 +7,7 @@ require 'json'
 
 Bundler.require
 
-require 'juggler/cli'
+require 'hustler/cli'
 
 module Juggler
 
@@ -137,27 +137,27 @@ module Juggler
     end
 
     def status=(value)
-      Juggler.redis.hset 'juggler.status', self.id, value
+      Hustler.redis.hset 'hustler.status', self.id, value
     end
 
     def status
-      Juggler.redis.hget 'juggler.status', self.id
+      Hustler.redis.hget 'hustler.status', self.id
     end
 
     def progress=(value)
-      Juggler.redis.hset 'juggler.progress', self.id, value
+      Hustler.redis.hset 'hustler.progress', self.id, value
     end
 
     def progress
-      (Juggler.redis.hget 'juggler.progress', self.id).to_f
+      (Hustler.redis.hget 'hustler.progress', self.id).to_f
     end
 
     def set_data(key, value)
-      Juggler.redis.hset 'juggler.data', self.id, JSON.dump(data.merge(key => value))
+      Hustler.redis.hset 'hustler.data', self.id, JSON.dump(data.merge(key => value))
     end
 
     def data
-      str = Juggler.redis.hget 'juggler.data', self.id
+      str = Hustler.redis.hget 'hustler.data', self.id
       str ? JSON.parse(str) : {}
     end
 

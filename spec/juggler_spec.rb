@@ -6,8 +6,8 @@ describe Juggler do
     Juggler.configure(
       'access_key_id'         => '0XZN91V3MBE44A05R2R2',
       'secret_access_key'     => 'WKVJffwxdw+JNzuRTYfj0SmCMgemiFGnIc+KEYRB',
-      'queue_bucket_name'     => "queue.juggler.development",
-      'processed_bucket_name' => "processed.juggler.development"
+      'queue_bucket_name'     => "queue.hustler.development",
+      'processed_bucket_name' => "processed.hustler.development"
     )
   end
 
