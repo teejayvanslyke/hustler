@@ -9,7 +9,7 @@ Bundler.require
 
 require 'hustler/cli'
 
-module Juggler
+module Hustler
 
   DEFAULT_OPTIONS =
     {
@@ -85,8 +85,8 @@ module Juggler
     end
 
     def run
-      Juggler.queue.each do |object|
-        Juggler::Job.run(object)
+      Hustler.queue.each do |object|
+        Hustler::Job.run(object)
       end
     end
 
@@ -118,7 +118,7 @@ module Juggler
         cleanup @object
         to_write = result.is_a?(Array) ? result : [ result ]
         to_write.each do |io|
-          AWS::S3::S3Object.store(sha1(io), io, Juggler.config['processed_bucket_name'])
+          AWS::S3::S3Object.store(sha1(io), io, Hustler.config['processed_bucket_name'])
         end
         self.status = 'completed'
         processor.on_complete(self)
@@ -162,18 +162,18 @@ module Juggler
     end
 
     def sha1(io)
-      Juggler.sha1(io)
+      Hustler.sha1(io)
     end
 
     def lock(object)
       parts = File.split(object.path)
       name = "---LOCKED---#{parts.last}"
       object.rename(name)
-      Juggler.queue_bucket[name]
+      Hustler.queue_bucket[name]
     end
 
     def processor
-      @processor ||= Juggler.processor.new(self)
+      @processor ||= Hustler.processor.new(self)
     end
 
     def perform(io)
@@ -221,5 +221,5 @@ module Juggler
 
 end
 
-Juggler.processor = Juggler::PassthroughProcessor
+Hustler.processor = Hustler::PassthroughProcessor
 

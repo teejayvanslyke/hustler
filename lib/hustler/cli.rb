@@ -1,13 +1,13 @@
 require 'thor'
 
-module Juggler
+module Hustler
   class CLI < Thor
     desc "work", "Starts watching incoming S3 queue for files to process"
 
     def work
-      puts "Watching for incoming files in bucket '#{Juggler.config['queue_bucket_name']}'..."
+      puts "Watching for incoming files in bucket '#{Hustler.config['queue_bucket_name']}'..."
       loop do
-        Juggler::Worker.run
+        Hustler::Worker.run
         sleep 1
       end
     end

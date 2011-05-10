@@ -4,4 +4,4 @@ $:.unshift File.join(File.dirname(__FILE__),'..','lib')
 require 'rubygems'
 require 'hustler'
 
-Juggler::CLI.start
+Hustler::CLI.start
