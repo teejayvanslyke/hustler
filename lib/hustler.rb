@@ -126,6 +126,7 @@ module Hustler
     end
 
     def run
+      self.status = 'processing'
       if (result = perform(StringIO.new(@object.value)))
         cleanup @object
         to_write = result.is_a?(Array) ? result : [ result ]
