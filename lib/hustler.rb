@@ -17,6 +17,15 @@ module Hustler
       'redis_port' => 6379
     }.freeze
 
+  class OptionsHash < Hash
+    def initialize(hash)
+      self.merge!(hash)
+    end
+
+    def method_missing(name, *args)
+      self[name.to_s] || self[name]
+    end
+  end
 
   class << self
 
@@ -29,7 +38,7 @@ module Hustler
     end
 
     def configure(options)
-      @config = DEFAULT_OPTIONS.merge(options)
+      @config = OptionsHash.new(DEFAULT_OPTIONS.merge(options))
       AWS::S3::Base.establish_connection!(
         :access_key_id     => @config['access_key_id'],
         :secret_access_key => @config['secret_access_key']
@@ -58,21 +67,24 @@ module Hustler
       "http://#{self.config['processed_bucket_name']}.s3.amazonaws.com/#{id}"
     end
 
+    def url_for(id)
+      options = Hustler.config.expire_urls_in ? { :expires_in => Hustler.config.expire_urls_in } : {}
+      AWS::S3::S3Object.url_for(id, self.config.processed_bucket_name, options)
+    end
+
     def queue
       queue_bucket.objects.reject {|o| o.path.include?("---LOCKED---")}
     end
 
-    def enqueue(file)
-      AWS::S3::S3Object.store(sha1(file), file, self.config['queue_bucket_name'])
+    def store(io, bucket)
+      AWS::S3::S3Object.store(sha1(io), io, bucket, :access => Hustler.config.access_policy.intern)
     end
 
-    def processor=(processor)
-      @processor = processor
+    def enqueue(file)
+      store(file, self.config.queue_bucket_name)
     end
-    
-    def processor
-      @processor
-    end
+
+    attr_accessor :processor
   end
 
   class Worker
@@ -118,7 +130,7 @@ module Hustler
         cleanup @object
         to_write = result.is_a?(Array) ? result : [ result ]
         to_write.each do |io|
-          AWS::S3::S3Object.store(sha1(io), io, Hustler.config['processed_bucket_name'])
+          Hustler.store(io, Hustler.config.processed_bucket_name)
         end
         self.status = 'completed'
         processor.on_complete(self)
@@ -221,5 +233,5 @@ module Hustler
 
 end
 
-Hustler.processor = Hustler::PassthroughProcessor
+Hustler.processor      = Hustler::PassthroughProcessor
 

@@ -2,13 +2,18 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe Hustler do
 
-  before :all do
-    Hustler.configure(
+  def default_options(overrides={})
+    {
       'access_key_id'         => '0XZN91V3MBE44A05R2R2',
       'secret_access_key'     => 'WKVJffwxdw+JNzuRTYfj0SmCMgemiFGnIc+KEYRB',
       'queue_bucket_name'     => "queue.hustler.development",
-      'processed_bucket_name' => "processed.hustler.development"
-    )
+      'processed_bucket_name' => "processed.hustler.development",
+      'access_policy'         => "private"
+    }.merge(overrides)
+  end
+
+  before :all do
+    Hustler.configure(default_options)
   end
 
   def mock_s3_object(overrides={})
@@ -31,7 +36,7 @@ describe Hustler do
   describe "when enqueuing a file for processing" do
     it "should upload the file to S3" do
       file = File.open(File.dirname(__FILE__) + '/fixtures/example.jpg')
-      AWS::S3::S3Object.should_receive(:store).with(anything, file, Hustler.config['queue_bucket_name'])
+      AWS::S3::S3Object.should_receive(:store).with(anything, file, Hustler.config['queue_bucket_name'], :access => :private)
       Hustler.enqueue file
     end
   end
@@ -116,10 +121,32 @@ describe Hustler do
       Hustler::Job.run(@s3_object)
     end
 
-    it "should process the file through the processor" do
-      AWS::S3::S3Object.should_receive(:store).
-        with(Digest::SHA1.hexdigest("FOOBAR"), anything, Hustler.config['processed_bucket_name'])
-      Hustler::Job.run(@s3_object)
+    context "and the access policy is public-read" do
+      before :all do
+        Hustler.configure(default_options(
+          'access_policy' => 'public_read'
+        ))
+      end
+
+      it "should store the file with public-read permissions" do
+        AWS::S3::S3Object.should_receive(:store).
+          with(Digest::SHA1.hexdigest("FOOBAR"), anything, Hustler.config['processed_bucket_name'], :access => :public_read)
+        Hustler::Job.run(@s3_object)
+      end
+    end
+
+    context "and the access policy is private" do
+      before :all do
+        Hustler.configure(default_options(
+          'access_policy' => 'private'
+        ))
+      end
+
+      it "should store the file with private permissions" do
+        AWS::S3::S3Object.should_receive(:store).
+          with(Digest::SHA1.hexdigest("FOOBAR"), anything, Hustler.config['processed_bucket_name'], :access => :private)
+        Hustler::Job.run(@s3_object)
+      end
     end
 
     it "should have an initial status of 'queued'" do
@@ -168,7 +195,7 @@ describe Hustler do
       it "should store each as a separate object" do
         %w(FOO BAR).each do |data|
           AWS::S3::S3Object.should_receive(:store).
-            with(Digest::SHA1.hexdigest(data), anything, Hustler.config['processed_bucket_name'])
+            with(Digest::SHA1.hexdigest(data), anything, Hustler.config.processed_bucket_name, :access => :private)
         end
 
         Hustler::Job.run(@s3_object)
@@ -192,6 +219,35 @@ describe Hustler do
       end
     end
 
+  end
+
+  describe "when generating URL's for objects" do
+    context "when the policy is public-read" do
+      before :each do
+        Hustler.configure(default_options(
+          'access_policy' => 'public_read'
+        ))
+      end
+
+      it "should not set an expiry when providing a URL for an object" do
+        AWS::S3::S3Object.should_receive(:url_for).with('abcd1234', Hustler.config['processed_bucket_name'], {})
+        Hustler.url_for('abcd1234')
+      end
+    end
+
+    context "when the policy is private with an expiration" do
+      before :each do
+        Hustler.configure(default_options(
+          'access_policy'  => 'public_read',
+          'expire_urls_in' => 60
+        ))
+      end
+
+      it "should set an expiry when providing a URL for an object" do
+        AWS::S3::S3Object.should_receive(:url_for).with('abcd1234', Hustler.config['processed_bucket_name'], :expires_in => 60)
+        Hustler.url_for('abcd1234')
+      end
+    end
   end
 
 end
