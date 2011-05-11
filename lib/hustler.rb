@@ -31,7 +31,7 @@ module Hustler
   class << self
 
     def logger
-      @logger ||= Logger.new(STDOUT)
+      @logger ||= Logger.new(Hustler.config.logger_stream || STDOUT)
     end
 
     def redis
@@ -82,7 +82,10 @@ module Hustler
     end
 
     def store(io, bucket)
-      AWS::S3::S3Object.store(sha1(io), io, bucket, :access => Hustler.config.access_policy.intern)
+      sha1 = sha1(io)
+      unless AWS::S3::S3Object.exists?(sha1, bucket)
+        AWS::S3::S3Object.store(sha1, io, bucket, :access => Hustler.config.access_policy.intern)
+      end
     end
 
     def enqueue(file)

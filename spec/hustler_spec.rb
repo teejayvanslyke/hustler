@@ -8,7 +8,8 @@ describe Hustler do
       'secret_access_key'     => 'WKVJffwxdw+JNzuRTYfj0SmCMgemiFGnIc+KEYRB',
       'queue_bucket_name'     => "queue.hustler.development",
       'processed_bucket_name' => "processed.hustler.development",
-      'access_policy'         => "private"
+      'access_policy'         => "private",
+      'logger_stream'         => StringIO.new
     }.merge(overrides)
   end
 
@@ -71,6 +72,8 @@ describe Hustler do
   describe Hustler::Job do
 
     before :each do
+      # Assume no object already exists on S3.
+      AWS::S3::S3Object.stub!(:exists?).and_return(false)
       @s3_object = mock_s3_object(:path => "/the_bucket/filename")
       Hustler.queue_bucket.stub!(:[]).and_return(@s3_object)
 
@@ -145,6 +148,17 @@ describe Hustler do
       it "should store the file with private permissions" do
         AWS::S3::S3Object.should_receive(:store).
           with(Digest::SHA1.hexdigest("FOOBAR"), anything, Hustler.config['processed_bucket_name'], :access => :private)
+        Hustler::Job.run(@s3_object)
+      end
+    end
+
+    context "when the object already exists on S3" do
+      before :each do
+        AWS::S3::S3Object.stub!(:exists?).and_return(true)
+      end
+
+      it "should skip writing it" do
+        AWS::S3::S3Object.should_not_receive(:store)
         Hustler::Job.run(@s3_object)
       end
     end
