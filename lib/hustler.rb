@@ -4,6 +4,7 @@ require 'rubygems'
 require 'bundler'
 require 'digest/sha1'
 require 'json'
+require 'logger'
 
 Bundler.require
 
@@ -28,6 +29,10 @@ module Hustler
   end
 
   class << self
+
+    def logger
+      @logger ||= Logger.new(STDOUT)
+    end
 
     def redis
       @redis ||= Redis.new(:host => @config['redis_host'], :port => @config['redis_port'])
@@ -130,7 +135,8 @@ module Hustler
       if (result = perform(StringIO.new(@object.value)))
         cleanup @object
         to_write = result.is_a?(Array) ? result : [ result ]
-        to_write.each do |io|
+        to_write.each_with_index do |io, index|
+          Hustler.logger.info "Writing #{index} of #{to_write.length}..."
           Hustler.store(io, Hustler.config.processed_bucket_name)
         end
         self.status = 'completed'
