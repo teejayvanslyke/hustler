@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{hustler}
-  s.version = "0.1.0"
+  s.version = "0.2.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["T.J. VanSlyke"]
-  s.date = %q{2011-05-10}
+  s.date = %q{2011-05-11}
   s.default_executable = %q{juggler}
   s.description = %q{Redis + S3 file queue}
   s.email = %q{teejay.vanslyke@gmail.com}
@@ -27,10 +27,11 @@ Gem::Specification.new do |s|
     "VERSION",
     "bin/juggler",
     "config/s3.yml.example",
+    "hustler.gemspec",
     "lib/hustler.rb",
     "lib/hustler/cli.rb",
     "spec/fixtures/example.jpg",
-    "spec/juggler_spec.rb",
+    "spec/hustler_spec.rb",
     "spec/spec_helper.rb",
     "spec/support/redis.rb"
   ]
@@ -40,7 +41,7 @@ Gem::Specification.new do |s|
   s.rubygems_version = %q{1.3.7}
   s.summary = %q{Redis + S3 file queue}
   s.test_files = [
-    "spec/juggler_spec.rb",
+    "spec/hustler_spec.rb",
     "spec/spec_helper.rb",
     "spec/support/redis.rb"
   ]
